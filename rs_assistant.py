@@ -229,45 +229,23 @@ def add_prime_request(driver, cur_url, tw_user, tw_pass, rs_user, rs_pass):
             time.sleep(1)
             pass
 
-        #print("Opening prime loot button.")
-        #for data in driver.find_elements_by_class_name("//button[@class='tw-button-icon tw-button-icon--overlay tw-interactive']"):
-            #if print(data.is_displayed()):
-                #print(data.text)
-                #time.sleep(1)
-
         time.sleep(2)
 
         # print("Scrolling to runescape loot")
-        #driver.get("https://www.twitch.tv/prime")
-        driver.get("https://www.runescape.com/twitch-prime")
+        driver.get("https://www.twitch.tv/prime")
 
     elif cur_url == "https://www.twitch.tv/prime":
         print("Finding runescape prime offer")
 
-        test = driver.find_elements_by_xpath("//button[@class='tw-button tw-button--full-width tw-interactive']")
-        test2 = driver.find_elements_by_id("73335d60f9c8f07981cc1afa97385b3a")
-
-        i = 1
-
-        for t in test2:
-            print(t.text)
-            print(t.location)
-            print("index i", i)
-            i += 1
-
-        i = 1
-
-        for d in test:
-            print(d.location)
-            print(d.text)
-            print("index i", i)
-            i += 1
+        driver.find_element_by_xpath('//*[@id="ingameloot"]/div/div/div[3]/div/div/div[1]/div[2]/div[6]/div/div/div[2]/div[1]/div/div/button').click()
+        time.sleep(2)
+        driver.get("https://www.runescape.com/twitch-prime")
 
     elif "https://www.runescape.com/twitch-prime" in cur_url:
         print("On runescape prime claim page with get loot player")
 
         print("Clicking get loot button")
-        driver.find_element_by_link_text("GET LOOT").click()
+        driver.find_element_by_link_text("GET REWARDS").click()
     elif "/oauth2/authorize" in cur_url:
         print("On twitch authorization page.")
 
@@ -280,6 +258,8 @@ def add_prime_request(driver, cur_url, tw_user, tw_pass, rs_user, rs_pass):
         driver.find_element_by_link_text("YES - LOG IN").click()
     elif "loginform.ws" in cur_url:
         runescape_login(driver, rs_user, rs_pass)
+    elif "/account/linked-accounts/twitch/redeem?" in cur_url:
+        driver.find_element_by_link_text("CONFIRM").click()
 
 
 # Creates quantumbot terminal launch file
