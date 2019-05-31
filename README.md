@@ -7,7 +7,7 @@ Runescape helper tool for mass account request usage.
 
 -Password request: Places password reset request on to the current account.
 
--Twitch request: Work in progress. Discontinued for now due to promotion end.
+-Twitch request: Working script. Ping for maintenance
 
 -Launcher request: Creates shell script for all accounts listed in "accounts.txt"
 
