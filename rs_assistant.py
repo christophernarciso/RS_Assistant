@@ -183,6 +183,18 @@ def add_password_request(driver, cur_url, username, password):
 def twitch_login(driver, username, password):
     # On twitch login page
     print("On twitch login page")
+    # g-recaptcha-response-1
+    if "Please complete the reCAPTCHA below." in driver.page_source:
+        # Generates the captcha token and executes javascript
+        print("Recaptcha")
+
+        captcha_id = get_captcha_id(twitch_login_url, twitch_site_key)
+        captcha_token = get_captcha_token(captcha_id)
+        driver.execute_script("document.getElementById('g-recaptcha-response').innerHTML = '"
+                              + captcha_token + "';")
+        time.sleep(3)
+        pass
+
     username_field = driver.find_element_by_xpath("//input[contains(@type,'text')]")
     password_field = driver.find_element_by_xpath("//input[contains(@type,'password')]")
 
@@ -198,23 +210,9 @@ def twitch_login(driver, username, password):
 
     time.sleep(1)
 
-    # g-recaptcha-response-1
-    if twitch_site_key in driver.page_source:
-        # Generates the captcha token and executes javascript
-        print("Recaptcha")
-
-        captcha_id = get_captcha_id(twitch_login_url, twitch_site_key)
-        captcha_token = get_captcha_token(captcha_id)
-        driver.execute_script("document.getElementById('g-recaptcha-response-1').innerHTML = '"
-                              + captcha_token + "'; onSubmit();")
-
-        #form = driver.find_element_by_id("form").submit()
-        time.sleep(3)
-        pass
-    else:
-        print("Clicking the login button")
-        driver.find_element_by_xpath("//button[@class='tw-button tw-button--full-width tw-interactive']").click()
-        time.sleep(3)
+    print("Clicking the login button")
+    driver.find_element_by_xpath("/html/body/div[2]/div/div/div/div[1]/div/div/form/div/div[3]/button").click()
+    time.sleep(3)
 
 
 # Add twitch promotion to the account(s)
@@ -223,21 +221,37 @@ def add_prime_request(driver, cur_url, tw_user, tw_pass, rs_user, rs_pass):
         twitch_login(driver, tw_user, tw_pass)
     elif "Featured Channels" in driver.page_source or "twitch.tv/hi" in cur_url:
         print("Just logged in and on main page.")
+        time.sleep(1)
+        driver.get("https://www.twitch.tv")
 
-        if "/hi" in cur_url:
-            driver.get("https://www.twitch.tv")
-            time.sleep(1)
-            pass
-
+        time.sleep(3)
+        print("Finding dropdown")
+        driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div[1]/div[1]/div/div[1]/button').click()
+        time.sleep(3)
+        print("attempting to scroll down")
+        actions = ActionChains(driver)
+        actions.move_to_element(driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div/div[2]/div[2]/div/div[2]/div[3]/div/div/div[1]/div[11]/div/div/div[2]/div[1]/div/h4/p')).perform()
+        time.sleep(3)
+        print("Selecting claim offer")
+        driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div/div[2]/div[2]/div/div[2]/div[3]/div/div/div[1]/div[10]/div/div/div[2]/div[3]/div[1]/div/div/button').click()
         time.sleep(2)
-
-        # print("Scrolling to runescape loot")
-        driver.get("https://www.twitch.tv/prime")
-
+        driver.get("https://www.runescape.com/twitch-prime")
+    elif "It looks like you haven't claimed your loot from Twitch yet." in driver.page_source:
+        print("Clicking claim loot")
+        driver.find_element_by_link_text("Claim Twitch Prime Loot").click()
+        time.sleep(2)
+        driver.switch_to.window(driver.window_handles[1])
+    elif cur_url == "https://twitch.amazon.com/tp":
+        time.sleep(5)
+        print("finding claim loot button")
+        driver.find_element_by_xpath('//*[@id="root"]/div/main/div/div/div/div[1]/div[2]/div/div/div[2]/div[2]/div[2]/div/div[2]/div/div[2]/div[1]/div[2]/div/div/div/div/div[6]/div/div/div/div[2]/div/div[2]/div[2]/button/span/div/p').click()
+        time.sleep(2)
+        driver.get("https://www.runescape.com/twitch-prime")
     elif cur_url == "https://www.twitch.tv/prime":
         print("Finding runescape prime offer")
 
-        driver.find_element_by_xpath('//*[@id="ingameloot"]/div/div/div[3]/div/div/div[1]/div[2]/div[6]/div/div/div[2]/div[1]/div/div/button').click()
+        driver.find_element_by_xpath(
+            '//*[@id="root"]/div/main/div/div/div/div[1]/div[2]/div/div/div[2]/div[2]/div[2]/div/div[2]/div/div[2]/div[1]/div[2]/div/div/div/div/div[6]/div/div/div/div[2]/div/div[2]/div[2]/button/span/div/p').click()
         time.sleep(2)
         driver.get("https://www.runescape.com/twitch-prime")
 
@@ -251,15 +265,19 @@ def add_prime_request(driver, cur_url, tw_user, tw_pass, rs_user, rs_pass):
 
         print("Clicking authorize button")
         driver.find_element_by_xpath("//button[@class='button button--large js-authorize']").click()
+    elif "/account/linked-accounts/twitch/redeem?" in cur_url:
+        time.sleep(1)
+        driver.find_element_by_xpath('//*[@id="l-vista__container"]/section/div/div/button').click()
+        # driver.find_element_by_link_text("Confirm").click()
+        time.sleep(2)
     elif "account/linked-accounts" in cur_url:
         print("On the rs login page.")
 
         print("Clicking yes-log in button")
         driver.find_element_by_link_text("YES - LOG IN").click()
+        time.sleep(1)
     elif "loginform.ws" in cur_url:
         runescape_login(driver, rs_user, rs_pass)
-    elif "/account/linked-accounts/twitch/redeem?" in cur_url:
-        driver.find_element_by_link_text("CONFIRM").click()
 
 
 # Creates quantumbot terminal launch file
