@@ -11,13 +11,19 @@ Runescape helper tool for mass account request usage.
 
 -Launcher request: Creates shell script for all accounts listed in "accounts.txt"
 
+-Verify request: TODO
+
 
 ## Usage
-Program grabs account list from the current directory.
+You must have python3 installed. Please go here for a direct download: https://www.python.org/download/releases/3.0/
 
-"accounts.txt" - the list of runescape accounts to run through
+You must have the latest chromedriver placed in the current directory of where your running the pything script.
+Please go here for a direct download: https://chromedriver.chromium.org/
 
-"twaccounts.txt" - the list of twitch accounts to run through iff twitch_request = True
+Stuff to edit:
+
+Edit 'rs_assistant.py' if you want custom file names (Read in from the current directory).
+Edit captcha_key field with your 2captcha key.
 
 Parameters
 
@@ -26,7 +32,7 @@ Parameters
 - parser.add_argument('--twitch', help='adds a twitch request to the account(s)')
 - parser.add_argument('--launcher', help='adds a launcher request from the account list')
 
-e.g, python3 rs_assistant.py --email True
+e.g, python3 rs_assistant.py --twitch True
 
 ## Output
 ``` 

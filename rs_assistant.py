@@ -2,13 +2,26 @@ import time
 import argparse
 import requests
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchElementException
 
-# Constants
+# CONSTANT VARIABLES DO NOT CHANGE UNLESS NEEDED
 runescape_login_url = "https://secure.runescape.com/m=weblogin/loginform.ws?mod=www&ssl=1&expired=0&dest=account_settings"
+runescape_login_failed_url = "https://secure.runescape.com/m=weblogin/login.ws"
 twitch_login_url = "https://www.twitch.tv/login"
-captcha_key = "2CAPTCHA_KEY_HERE"
 runescape_site_key = "6Lcsv3oUAAAAAGFhlKrkRb029OHio098bbeyi_Hv"
 twitch_site_key = "6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX"
+
+# CHANGE THESE VARIABLES
+runescape_accounts_file = "accounts.txt"
+twitch_accounts_file = "twaccounts.txt"
+passed_accounts_file = "passed_prime_accounts.txt"
+failed_twitch_accounts_file = "failed_twitch_accounts.txt"
+failed_runescape_accounts_file = "failed_runescape_accounts.txt"
+email_to_request = "email"
+captcha_key = "2captcha_key"
+launcher_name = "launcher.bat"
+launcher_script_name = "scriptname"
 
 
 # Loads the chromedriver at specified url
@@ -44,9 +57,9 @@ def get_captcha_id(captcha_page_url, captcha_site_key):
         "invisible": "1"
     }
 
-    # Update the invisible param if not runescape captcha key
-    if runescape_site_key not in captcha_site_key:
-        captcha_params.update({"invisible": "0"})
+    # # Update the invisible param if not runescape captcha key
+    # if runescape_site_key not in captcha_site_key:
+    #     captcha_params.update({"invisible": "0"})
 
     # Post request to 2captcha api
     res = requests.post("http://2captcha.com/in.php", params=captcha_params)
@@ -85,8 +98,10 @@ def can_move_to_next(driver, cur_url):
            or "login.ws" in cur_url \
            or "https://www.runescape.com/unavailable" in cur_url \
            or "Please try again" in page_source \
+           or "You now have access to your free membership in RuneScape and Old School RuneScape, plus all of the additional Twitch Prime loot." in page_source \
            or "Success" in page_source \
-           or "Oops!" in page_source
+           or "Oops!" in page_source and "It looks like you haven't claimed your loot from Twitch yet." not in page_source \
+           or "********" in page_source
 
 
 # Login form handler runescape.com
@@ -211,7 +226,8 @@ def twitch_login(driver, username, password):
     time.sleep(1)
 
     print("Clicking the login button")
-    driver.find_element_by_xpath("/html/body/div[2]/div/div/div/div[1]/div/div/form/div/div[3]/button").click()
+    driver.find_element_by_xpath(
+        "/html/body/div[2]/div/div/div/div/div/div[1]/div/div/div[3]/form/div/div[3]/button").click()
     time.sleep(3)
 
 
@@ -219,60 +235,40 @@ def twitch_login(driver, username, password):
 def add_prime_request(driver, cur_url, tw_user, tw_pass, rs_user, rs_pass):
     if cur_url == twitch_login_url:
         twitch_login(driver, tw_user, tw_pass)
-    elif "Featured Channels" in driver.page_source or "twitch.tv/hi" in cur_url:
+    elif "Featured Channels" in driver.page_source or "twitch.tv/hi" in cur_url or "Discover" in driver.page_source:
         print("Just logged in and on main page.")
         time.sleep(1)
-        driver.get("https://www.twitch.tv")
+        if "twitch.tv/hi" in cur_url:
+            driver.get("https://www.twitch.tv")
+            time.sleep(3)
 
-        time.sleep(3)
         print("Finding dropdown")
-        driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div[1]/div[1]/div/div[1]/button').click()
-        time.sleep(3)
-        print("attempting to scroll down")
-        actions = ActionChains(driver)
-        actions.move_to_element(driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div/div[2]/div[2]/div/div[2]/div[3]/div/div/div[1]/div[11]/div/div/div[2]/div[1]/div/h4/p')).perform()
-        time.sleep(3)
-        print("Selecting claim offer")
-        driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div/div[2]/div[2]/div/div[2]/div[3]/div/div/div[1]/div[10]/div/div/div[2]/div[3]/div[1]/div/div/button').click()
-        time.sleep(2)
-        driver.get("https://www.runescape.com/twitch-prime")
-    elif "It looks like you haven't claimed your loot from Twitch yet." in driver.page_source:
-        print("Clicking claim loot")
-        driver.find_element_by_link_text("Claim Twitch Prime Loot").click()
-        time.sleep(2)
-        driver.switch_to.window(driver.window_handles[1])
-    elif cur_url == "https://twitch.amazon.com/tp":
-        time.sleep(5)
-        print("finding claim loot button")
-        driver.find_element_by_xpath('//*[@id="root"]/div/main/div/div/div/div[1]/div[2]/div/div/div[2]/div[2]/div[2]/div/div[2]/div/div[2]/div[1]/div[2]/div/div/div/div/div[6]/div/div/div/div[2]/div/div[2]/div[2]/button/span/div/p').click()
-        time.sleep(2)
-        driver.get("https://www.runescape.com/twitch-prime")
-    elif cur_url == "https://www.twitch.tv/prime":
-        print("Finding runescape prime offer")
-
         driver.find_element_by_xpath(
-            '//*[@id="root"]/div/main/div/div/div/div[1]/div[2]/div/div/div[2]/div[2]/div[2]/div/div[2]/div/div[2]/div[1]/div[2]/div/div/div/div/div[6]/div/div/div/div[2]/div/div[2]/div[2]/button/span/div/p').click()
-        time.sleep(2)
-        driver.get("https://www.runescape.com/twitch-prime")
-
-    elif "https://www.runescape.com/twitch-prime" in cur_url:
-        print("On runescape prime claim page with get loot player")
-
-        print("Clicking get loot button")
-        driver.find_element_by_link_text("GET REWARDS").click()
+            '//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div[1]/div[1]/div/div[1]/button').click()
+        time.sleep(3)
+        try:
+            print("attempting to scroll down")
+            actions = ActionChains(driver)
+            actions.move_to_element(driver.find_element_by_xpath(
+                '//*[@id="root"]/div/div[2]/nav/div/div[3]/div[2]/div/div/div[2]/div/div/div[2]/div/div[3]/div/div/div[1]/div[2]/div/div/div[2]/div[2]/div[2]/p')).perform()
+            time.sleep(3)
+            print("Selecting claim offer")
+            driver.find_element_by_xpath(
+                '/html/body/div[1]/div/div[2]/nav/div/div[3]/div[2]/div/div/div[2]/div/div/div[2]/div/div[3]/div/div/div[1]/div[2]/div/div/div[2]/div[3]/div[1]/div/div/button').click()
+            time.sleep(3)
+        except NoSuchElementException:
+            print("Looks like it was already claimed.")
+        driver.get("https://www.runescape.com/account/linked-accounts/twitch/redeem")
     elif "/oauth2/authorize" in cur_url:
         print("On twitch authorization page.")
-
         print("Clicking authorize button")
-        driver.find_element_by_xpath("//button[@class='button button--large js-authorize']").click()
+        driver.find_element_by_xpath("/html/body/div/div/div[6]/form/fieldset/button[1]").click()
     elif "/account/linked-accounts/twitch/redeem?" in cur_url:
         time.sleep(1)
         driver.find_element_by_xpath('//*[@id="l-vista__container"]/section/div/div/button').click()
-        # driver.find_element_by_link_text("Confirm").click()
         time.sleep(2)
     elif "account/linked-accounts" in cur_url:
         print("On the rs login page.")
-
         print("Clicking yes-log in button")
         driver.find_element_by_link_text("YES - LOG IN").click()
         time.sleep(1)
@@ -280,25 +276,22 @@ def add_prime_request(driver, cur_url, tw_user, tw_pass, rs_user, rs_pass):
         runescape_login(driver, rs_user, rs_pass)
 
 
-# Creates quantumbot terminal launch file
+# Creates terminal launch file
 def make_quantum_shell_script():
     # load rs account list
-    runescape_account_list = file_information("accounts.txt")
+    runescape_account_list = file_information(runescape_accounts_file)
     index = 0
     length = len(runescape_account_list)
-    password_acc = "PASSWORD_HERE"
-    script_name = "SCRIPT_NAME"
-    file_name = "quantumlaunch.bat"
 
-    with open(file_name, "w") as writer:
+    with open(launcher_name, "w") as writer:
         while index in range(length):
             runescape_acccount_information = runescape_account_list[index].split(":")
             user = runescape_acccount_information[0]
-            #password = runescape_acccount_information[1]
+            password = runescape_acccount_information[1]
             writer.write("java -jar launcher.jar -bot {} {} -world 301 -branch lemons -fps "
                          "20 -norender -interactv2 -script {}\n"
-                         .format(user, password_acc, script_name))
-            writer.write("TIMEOUT 6\n")
+                         .format(user, password, launcher_script_name))
+            writer.write("TIMEOUT 25\n")
             index += 1
 
 
@@ -307,6 +300,7 @@ def main():
     password_request = False
     twitch_request = False
     launcher_request = False
+    twitch_verify_request = False;
 
     # Add mode specific arguments
     parser = argparse.ArgumentParser(description='Process program arguments to run modes.')
@@ -314,9 +308,16 @@ def main():
     parser.add_argument('--password', help='adds a password request to the account(s)')
     parser.add_argument('--twitch', help='adds a twitch request to the account(s)')
     parser.add_argument('--launcher', help='adds a launcher request from the account list')
+    parser.add_argument('--verify', help='Checks whether accounts are verified for prime loot')
 
     args = parser.parse_args()
     print(args)
+    twitch_request = True
+
+    runescape_index = 0
+    twitch_index = 0
+    failed_tw_i = 0
+    failed_rs_i = 0
 
     if args.email:
         print("email request enabled.")
@@ -330,9 +331,12 @@ def main():
     elif args.launcher:
         print("launcher request enabled.")
         launcher_request = True
+    elif args.verify:
+        print("verify twitch request enabled.")
+        twitch_verify_request = True
 
     # Load driver & account information
-    if twitch_request:
+    if twitch_request or twitch_verify_request:
         url = twitch_login_url
     else:
         url = runescape_login_url
@@ -343,9 +347,9 @@ def main():
         driver = get_driver()
         driver.get(url)
 
-    # load rs account list
-    runescape_account_list = file_information("accounts.txt")
-    runescape_acccount_information = runescape_account_list[0].split(":")
+    # load rs account list first index
+    runescape_account_list = file_information(runescape_accounts_file)
+    runescape_acccount_information = runescape_account_list[runescape_index].split(":")
     len_rs_list = len(runescape_account_list)
     print("# of runescape accounts:", len_rs_list)
 
@@ -354,7 +358,6 @@ def main():
     # Always start with the first in the list.
     rs_username = runescape_acccount_information[0]
     rs_password = runescape_acccount_information[1]
-    email = "EMAIL_REQUEST_EX_JOE@GMAIL.COM"
 
     twitch_account_list = None
     twitch_acccount_information = None
@@ -363,16 +366,15 @@ def main():
     len_tw_list = 0
 
     if twitch_request:
-        # load twitch account list
-        twitch_account_list = file_information("twaccounts.txt")
-        twitch_acccount_information = twitch_account_list[0].split(":")
+        # load twitch account list first index
+        twitch_account_list = file_information(twitch_accounts_file)
+        twitch_acccount_information = twitch_account_list[twitch_index].split(":")
         len_tw_list = len(twitch_account_list)
         print("# of twitch accounts:", len_tw_list)
 
+        # Always start with the first in the list.
         tw_user = twitch_acccount_information[0]
         tw_pass = twitch_acccount_information[1]
-
-    index = 1
 
     time.sleep(1)
 
@@ -384,37 +386,53 @@ def main():
         cur_url = driver.current_url
         print(cur_url)
 
-        if index > len_rs_list or (twitch_request and index > len_tw_list):
+        if runescape_index > len_rs_list or (twitch_request and twitch_index > len_tw_list):
             print("Finished program..")
             driver.quit()
             break
         elif can_move_to_next(driver, cur_url):
             # Skip to next account
-            print("Account met conditions..moving on")
 
-            with open("passed_accounts.txt", "a") as f:
-                print("Save last worked to file passed_accounts.txt")
+            with open(passed_accounts_file, "a") as f:
+                print("Saving to file.")
                 if not twitch_request:
                     f.write("{}:{}\n".format(rs_username, rs_password))
-                else:
-                    f.write(
-                        "{}:{}:{}:{}:{}\n".format(rs_username, rs_password, "applied twitch with", tw_user, tw_pass))
+                elif twitch_request:
+                    if "Please try again" in driver.page_source and cur_url == twitch_login_url:
+                        print("Failed to login to twitch")
+                        with open(failed_twitch_accounts_file, "a") as t:
+                            t.write("#{} {}:{}\n".format(str(failed_tw_i), tw_user, tw_pass))
+                        twitch_index += 1
+                        failed_tw_i += 1
+                    elif "Please try again" in driver.page_source and cur_url == runescape_login_failed_url:
+                        print("Failed to login to runescape")
+                        with open(failed_runescape_accounts_file, "a") as r:
+                            r.write("#{} {}:{}\n".format(str(failed_rs_i), rs_username, rs_password))
+                        runescape_index += 1
+                        failed_rs_i += 1
+                    else:
+                        f.write(
+                            "{}:{}:{}:{}:{}\n".format(rs_username, rs_password,
+                                                      "SUCCESS WITH TWITCH & RUNESCAPE",
+                                                      tw_user,
+                                                      tw_pass))
+                        twitch_index += 1
+                        runescape_index += 1
+                        print("Account met conditions..moving on")
 
-            index += 1
-
-            if index < len_tw_list:
-                twitch_acccount_information = twitch_account_list[index].split(":")
+            if twitch_index < len_tw_list:
+                twitch_acccount_information = twitch_account_list[twitch_index].split(":")
                 tw_user = twitch_acccount_information[0]
                 tw_pass = twitch_acccount_information[1]
                 print("Current account tw:", tw_user)
 
-            if index < len_rs_list:
-                runescape_acccount_information = runescape_account_list[index].split(":")
+            if runescape_index < len_rs_list:
+                runescape_acccount_information = runescape_account_list[runescape_index].split(":")
                 rs_username = runescape_acccount_information[0]
                 rs_password = runescape_acccount_information[1]
                 print("Current account rs:", rs_username)
 
-            if twitch_request:
+            if twitch_request or twitch_verify_request:
                 driver.quit()
                 driver = get_driver()
 
@@ -422,7 +440,7 @@ def main():
             time.sleep(2)
             pass
         elif email_request:
-            add_email_request(driver, cur_url, email, rs_username, rs_password)
+            add_email_request(driver, cur_url, email_to_request, rs_username, rs_password)
         elif password_request:
             add_password_request(driver, cur_url, rs_username, rs_password)
         elif twitch_request:
