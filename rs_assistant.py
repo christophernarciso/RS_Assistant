@@ -301,6 +301,8 @@ def main():
     twitch_request = False
     launcher_request = False
     twitch_verify_request = False;
+	twitch_request = False
+
 
     # Add mode specific arguments
     parser = argparse.ArgumentParser(description='Process program arguments to run modes.')
@@ -312,7 +314,6 @@ def main():
 
     args = parser.parse_args()
     print(args)
-    twitch_request = True
 
     runescape_index = 0
     twitch_index = 0
